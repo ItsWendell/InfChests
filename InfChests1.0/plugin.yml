@@ -1,0 +1,5 @@
+name: InfChests
+description: Infinite Chests and Dispensers.
+main: net.wmisiedjan.bukkit.InfChests.InfChests
+version: 1.0-b1
+depend: [Vault]
