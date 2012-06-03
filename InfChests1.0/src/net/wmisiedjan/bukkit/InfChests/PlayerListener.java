@@ -3,6 +3,7 @@ package net.wmisiedjan.bukkit.InfChests;
 import net.milkbowl.vault.item.ItemInfo;
 import net.milkbowl.vault.item.Items;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -26,15 +27,15 @@ public class PlayerListener implements Listener {
 
 	@EventHandler
 	public void onSignChange(SignChangeEvent event) {
-		//SIGN CHECK
+		// SIGN CHECK
 		if (!event.getLine(0).toLowerCase().contains("[infchest]")) {
 			return;
 		}
 
-		//PERMISSIONS CHECK "infchests.create"
+		// PERMISSIONS CHECK "infchests.create"
 		try {
-			if (!plugin.permission.has(event.getPlayer().getWorld(), event.getPlayer()
-					.getName(), "infchests.create")) {
+			if (!plugin.permission.has(event.getPlayer().getWorld(), event
+					.getPlayer().getName(), "infchests.create")) {
 				event.getPlayer()
 						.sendMessage(
 								"[InfChests] You're not allowed to create Infinite Chests");
@@ -50,10 +51,37 @@ public class PlayerListener implements Listener {
 				return;
 			}
 		}
-		
-		//SAVED CONTENT CHEST - SIGN CHECK
+
+		// SAVED CONTENT CHEST - SIGN CHECK
 		if (event.getLine(1).isEmpty()
 				|| event.getLine(1).toLowerCase().contains("contents")) {
+
+			// Refill Time CHECK - SIGN CHECK
+			if (!event.getLine(2).isEmpty()) {
+				if (event.getLine(2).contains("m")) {
+					String[] data = event.getLine(2).split("m");
+					try {
+						int time = Integer.parseInt(data[1]);
+						if (time == -1) {
+							event.getPlayer()
+									.sendMessage(
+											"[InfChests] The refill time is not valid!");
+							event.getBlock().breakNaturally();
+
+							return;
+						} else {
+							event.getPlayer().sendMessage(
+									"[InfChests] Sucessfully created a chest with a refill timer on "
+											+ time + " minutes");
+							
+							return;
+						}
+					} catch (Exception e) {
+
+					}
+				}
+			}
+
 			Chest chest = getNearestChest(event.getBlock());
 
 			if (chest == null) {
@@ -62,23 +90,23 @@ public class PlayerListener implements Listener {
 				event.getBlock().breakNaturally();
 			}
 
-			plugin.inventories.put(chest.getBlock(), chest
-					.getInventory().getContents());
+			plugin.inventories.put(chest.getBlock(), chest.getInventory()
+					.getContents());
 			event.getPlayer().sendMessage(
 					"[InfChests] Saved chest contents to be infinite.");
 
 			return;
 		}
 
-		//ITEM CHEST - SIGN CHECK
+		// ITEM CHEST - SIGN CHECK
 		if (Items.itemByName(event.getLine(1)) == null) {
 			event.getPlayer().sendMessage(
 					"[InfChests] The item you entered doesn't exists.");
 			event.getBlock().breakNaturally();
 			return;
 		}
-		
-		//STACKSIZE CHECK - SIGN CHECK
+
+		// STACKSIZE CHECK - SIGN CHECK
 		if (!event.getLine(2).isEmpty()) {
 			try {
 				int sizetest = Integer.parseInt(event.getLine(2));
@@ -97,76 +125,80 @@ public class PlayerListener implements Listener {
 				return;
 			}
 		}
-		
-		//STACKSIZE CHECK - SUCCESS!
+
+		// STACKSIZE CHECK - SUCCESS!
 		event.getPlayer().sendMessage(
 				"[InfChests] Sucessfully created the information sign!");
 	}
 
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
-		//RIGHT CLICKED?
+		// RIGHT CLICKED?
 		if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
 			Sign sign;
-			
-			//CHECK IF BLOCK IS CHEST
+			Location loc = event.getClickedBlock().getLocation();
+
+			// CHECK IF BLOCK IS CHEST
 			if (event.getClickedBlock().getType() != Material.CHEST) {
 				return;
 			}
-			
-			//FINDING CLOSEST SIGN
+
+			// FINDING CLOSEST SIGN
 			sign = getNearestSign(event.getClickedBlock());
-			
-			//CHECK IF SIGN IS INFCHEST
+
+			// CHECK IF SIGN IS INFCHEST
 			if (sign == null
 					|| !sign.getLine(0).toLowerCase().contains("[infchest]")) {
 				return;
 			}
-			
-			//CHECK IF CAN OPEN. TEMP DISABLED. ACTIVATED ON REQUEST.
-			//PERMISSIONS CHECK "!infchests.open"
-			/*
-			try {
-				if (!plugin.permission.has(event.getPlayer().getWorld(), event.getPlayer()
-						.getName(), "!infchests.open")) {
-					event.getPlayer()
-							.sendMessage(
-									"[InfChests] You're not allowed to open Infinite Chests");
-					
-					event.setCancelled(true);
-					return;
-				}
-			} catch (Exception ex) {
-				if (!event.getPlayer().isOp()) {
-					event.getPlayer()
-							.sendMessage(
-									"[InfChests] You're not allowed to open Infinite Chests");
 
-					event.setCancelled(true);
-					return;
-				}
-			}
-			*/
-			
-			//SAVED CONTENTS CHEST.
+			// CHECK IF CAN OPEN. TEMP DISABLED. ACTIVATED ON REQUEST.
+			// PERMISSIONS CHECK "!infchests.open"
+			/*
+			 * try { if (!plugin.permission.has(event.getPlayer().getWorld(),
+			 * event.getPlayer() .getName(), "!infchests.open")) {
+			 * event.getPlayer() .sendMessage(
+			 * "[InfChests] You're not allowed to open Infinite Chests");
+			 * 
+			 * event.setCancelled(true); return; } } catch (Exception ex) { if
+			 * (!event.getPlayer().isOp()) { event.getPlayer() .sendMessage(
+			 * "[InfChests] You're not allowed to open Infinite Chests");
+			 * 
+			 * event.setCancelled(true); return; } }
+			 */
+
+			// SAVED CONTENTS CHEST.
 			if (sign.getLine(1).isEmpty()
 					|| sign.getLine(1).toLowerCase().contains("contents")) {
-				if (plugin.inventories.containsKey(event
-						.getClickedBlock())) {
+				if (plugin.inventories.containsKey(event.getClickedBlock())) {
 					Chest chest = (Chest) event.getClickedBlock().getState();
-					chest.getInventory().setContents(
-							plugin.inventories.get(event
-									.getClickedBlock()));
+					if(plugin.timers.get(loc))
+					{
+						chest.getInventory().setContents(
+							plugin.inventories.get(event.getClickedBlock()));
+					}
+					else
+					{
+						plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+
+							   public void run() {
+							       
+							   }
+							}, 60L);
+					}
 				} else {
 					Chest chest = (Chest) event.getClickedBlock().getState();
-					plugin.inventories.put(event.getClickedBlock(),
-							chest.getInventory().getContents());
+					plugin.inventories.put(event.getClickedBlock(), chest
+							.getInventory().getContents());
 				}
+				
 
 				return;
 			}
 			
-			//ITEM CHEST
+			
+
+			// ITEM CHEST
 			ItemInfo iinfo = Items.itemByName(sign.getLine(1));
 
 			// StackSize option line
@@ -228,7 +260,7 @@ public class PlayerListener implements Listener {
 				stacksize = Integer.parseInt(sign.getLine(2));
 			}
 
-			//APPLYING STACK AMOUT
+			// APPLYING STACK AMOUT
 			ItemStack item = new ItemStack(iteminfo.toStack());
 			item.setAmount(stacksize);
 
