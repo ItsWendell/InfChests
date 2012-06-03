@@ -136,7 +136,7 @@ public class PlayerListener implements Listener {
 		// RIGHT CLICKED?
 		if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
 			Sign sign;
-			Location loc = event.getClickedBlock().getLocation();
+			final Location loc = event.getClickedBlock().getLocation();
 
 			// CHECK IF BLOCK IS CHEST
 			if (event.getClickedBlock().getType() != Material.CHEST) {
@@ -172,19 +172,26 @@ public class PlayerListener implements Listener {
 					|| sign.getLine(1).toLowerCase().contains("contents")) {
 				if (plugin.inventories.containsKey(event.getClickedBlock())) {
 					Chest chest = (Chest) event.getClickedBlock().getState();
-					if(plugin.timers.get(loc))
-					{
-						chest.getInventory().setContents(
-							plugin.inventories.get(event.getClickedBlock()));
-					}
-					else
-					{
-						plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-
-							   public void run() {
-							       
-							   }
-							}, 60L);
+					if (!sign.getLine(2).isEmpty()) {
+						int time = Integer.parseInt(sign.getLine(2).split("m")[0]);
+						long timeconverted = time * 60 * 20;
+						if(!plugin.timers.contains(loc))
+						{
+							chest.getInventory().setContents(
+									plugin.inventories.get(event.getClickedBlock()));
+						}
+						else {
+							plugin.timers.add(loc);
+							plugin.log.finer("Added chest to no refill list.");
+							plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable() {
+								   @Override
+								public void run() {
+									   plugin.log.finer("Removed chest from no refill list. (refill time done)");
+								       plugin.timers.remove(loc);
+								   }
+								}, timeconverted);
+						}
+					
 					}
 				} else {
 					Chest chest = (Chest) event.getClickedBlock().getState();

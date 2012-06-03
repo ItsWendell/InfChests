@@ -1,7 +1,9 @@
 package net.wmisiedjan.bukkit.InfChests;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.milkbowl.vault.permission.Permission;
@@ -19,7 +21,7 @@ public class InfChests extends JavaPlugin {
 	public Permission permission = null;
 	public Map<Block, ItemStack[]> inventories = new HashMap<Block, ItemStack[]>();
 	//Block - CanUpdate(fill)
-	public Map<Location, Boolean> timers = new HashMap<Location, Boolean>();
+	public List<Location> timers = new ArrayList<Location>();
 	public Metrics stats;
 
 	public PlayerListener playerListener = null;
