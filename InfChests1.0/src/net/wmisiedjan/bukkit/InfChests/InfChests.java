@@ -19,7 +19,7 @@ public class InfChests extends JavaPlugin {
 	public StackableLogger log = null;
 	public PluginDescriptionFile pdfFile = null;
 	public Permission permission = null;
-	public Map<Block, ItemStack[]> inventories = new HashMap<Block, ItemStack[]>();
+	private ChestManager chestmanager = null;
 	//Block - CanUpdate(fill)
 	public List<Location> timers = new ArrayList<Location>();
 	public Metrics stats;
@@ -36,14 +36,19 @@ public class InfChests extends JavaPlugin {
 		// Initiating Listeners
 		playerListener = new PlayerListener(this);
 		
-		//Stats
+		// Initiating ChestManager
+		chestmanager = new ChestManager();
+		
+		//Disabled Metrics.
+		/*
 		try {
 		    stats = new Metrics(this);
 		    stats.start();
 		} catch (IOException e) {
 		    // Failed to submit the stats :-(
 		}
-
+		*/
+		
 		// Showing initial loading Message
 		log.info(pdfFile.getName() + " version " + pdfFile.getVersion()
 				+ " is loading...");
@@ -52,6 +57,11 @@ public class InfChests extends JavaPlugin {
 
 		// Registering Listeners
 		getServer().getPluginManager().registerEvents(playerListener, this);
+	}
+	
+	public ChestManager getChestManager()
+	{
+		return chestmanager;
 	}
 
 	public void versionMessages() {

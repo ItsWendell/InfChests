@@ -17,6 +17,8 @@ import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 public class PlayerListener implements Listener {
 	private InfChests plugin;
@@ -90,7 +92,7 @@ public class PlayerListener implements Listener {
 				event.getBlock().breakNaturally();
 			}
 
-			plugin.inventories.put(chest.getBlock(), chest.getInventory()
+			plugin.getChestManager().addChest(chest.getBlock(), chest.getInventory()
 					.getContents());
 			event.getPlayer().sendMessage(
 					"[InfChests] Saved chest contents to be infinite.");
@@ -132,7 +134,7 @@ public class PlayerListener implements Listener {
 	}
 
 	@EventHandler
-	public void onPlayerInteract(PlayerInteractEvent event) {
+	public void onPlayerInteract(final PlayerInteractEvent event) {
 		// RIGHT CLICKED?
 		if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
 			Sign sign;
@@ -167,35 +169,36 @@ public class PlayerListener implements Listener {
 			 * event.setCancelled(true); return; } }
 			 */
 
-			// SAVED CONTENTS CHEST.
-			if (sign.getLine(1).isEmpty()
-					|| sign.getLine(1).toLowerCase().contains("contents")) {
-				if (plugin.inventories.containsKey(event.getClickedBlock())) {
-					Chest chest = (Chest) event.getClickedBlock().getState();
-					if (!sign.getLine(2).isEmpty()) {
-						int time = Integer.parseInt(sign.getLine(2).split("m")[0]);
-						long timeconverted = time * 60 * 20;
-						if(!plugin.timers.contains(loc))
-						{
-							chest.getInventory().setContents(
-									plugin.inventories.get(event.getClickedBlock()));
+			// SAVED CONTENTS CHEST. (CUSTOM CHESTS)
+			if (sign.getLine(1).isEmpty() //Detect empty line after [infchest] OR if line starts with ~
+					|| sign.getLine(1).toLowerCase().startsWith("~")) {
+				if (plugin.getChestManager().contains(event.getClickedBlock())) { //If Existing Chest
+					final Chest chest = (Chest) event.getClickedBlock().getState(); //Transfer Block To Chest object
+					if (!sign.getLine(2).isEmpty()) { //If 3th line contains timer
+						int time = Integer.parseInt(sign.getLine(2).split("m")[0]); //Parse timer to time.
+						long timeconverted = time * 60 * 20; //Transfer time to ticks
+						
+						if(plugin.getChestManager().containsTimer(loc)){ //Check if refill timer is already on.
+							return;
 						}
-						else {
-							plugin.timers.add(loc);
-							plugin.log.finer("Added chest to no refill list.");
-							plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable() {
-								   @Override
-								public void run() {
-									   plugin.log.finer("Removed chest from no refill list. (refill time done)");
-								       plugin.timers.remove(loc);
-								   }
-								}, timeconverted);
-						}
+						
+						plugin.getChestManager().addTimer(loc);
+						
+						BukkitTask task = new BukkitRunnable() {
+							   @Override
+							public void run() {
+								   plugin.log.info("Refilling Chest...");
+								   chest.getInventory().setContents(plugin.getChestManager().getChest(event.getClickedBlock()));
+								   plugin.getChestManager().removeTimer(loc);
+							   }
+							}.runTaskLater(plugin, timeconverted);
+							
+
 					
 					}
 				} else {
 					Chest chest = (Chest) event.getClickedBlock().getState();
-					plugin.inventories.put(event.getClickedBlock(), chest
+					plugin.getChestManager().addChest(event.getClickedBlock(), chest
 							.getInventory().getContents());
 				}
 				
@@ -246,13 +249,13 @@ public class PlayerListener implements Listener {
 
 			if (sign.getLine(1).isEmpty()
 					|| sign.getLine(1).toLowerCase().contains("contents")) {
-				if (plugin.inventories.containsKey(event.getBlock())) {
+				if (plugin.getChestManager().contains(event.getBlock())) {
 					Dispenser chest = (Dispenser) event.getBlock().getState();
 					chest.getInventory().setContents(
-							plugin.inventories.get(event.getBlock()));
+							plugin.getChestManager().getChest(event.getBlock()));
 				} else {
 					Dispenser chest = (Dispenser) event.getBlock().getState();
-					plugin.inventories.put(event.getBlock(), chest
+					plugin.getChestManager().addChest(event.getBlock(), chest
 							.getInventory().getContents());
 				}
 
