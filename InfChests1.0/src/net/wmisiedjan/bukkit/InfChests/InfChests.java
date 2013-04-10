@@ -1,16 +1,11 @@
 package net.wmisiedjan.bukkit.InfChests;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Location;
-import org.bukkit.block.Block;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -20,9 +15,6 @@ public class InfChests extends JavaPlugin {
 	public PluginDescriptionFile pdfFile = null;
 	public Permission permission = null;
 	private ChestManager chestmanager = null;
-	//Block - CanUpdate(fill)
-	public List<Location> timers = new ArrayList<Location>();
-	public Metrics stats;
 
 	public PlayerListener playerListener = null;
 
@@ -38,16 +30,6 @@ public class InfChests extends JavaPlugin {
 		
 		// Initiating ChestManager
 		chestmanager = new ChestManager();
-		
-		//Disabled Metrics.
-		/*
-		try {
-		    stats = new Metrics(this);
-		    stats.start();
-		} catch (IOException e) {
-		    // Failed to submit the stats :-(
-		}
-		*/
 		
 		// Showing initial loading Message
 		log.info(pdfFile.getName() + " version " + pdfFile.getVersion()
